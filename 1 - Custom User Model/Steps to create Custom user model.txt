@@ -52,6 +52,7 @@ activate enviroment
 
 >>> pip install django
 >>> pip install djangorestframework
+>>> python -m pip install Pillow
 
 ---------------------------------------------------------------------------------------
 Step 3
@@ -221,7 +222,8 @@ class MyUser(AbstractBaseUser):
 
 Step 8 
 
-Setup admin.py ( Accounts App )
+Setup 
+admin.py ( Accounts App )
 
 from django import forms
 from django.contrib import admin
