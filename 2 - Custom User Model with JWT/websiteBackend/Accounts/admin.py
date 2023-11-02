@@ -2,8 +2,7 @@ from django import forms
 from django.contrib import admin
 from django.contrib.auth.models import Group
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from django.contrib.auth.forms import ReadOnlyPasswordHashField
-from django.core.exceptions import ValidationError
+
 
 from Accounts.models import MyUser
 
@@ -17,21 +16,26 @@ class UserAdmin(BaseUserAdmin):
     list_display = ["email", "name","designation","user_roll","profile_image" ,"is_admin"]
     list_filter = ["is_admin"]
     fieldsets = [
-        (None, {"fields": ["email", "password"]}),
+        ('User Credentials', {"fields": ["email", "password"]}),
         ("Personal info", {"fields": ["name","designation" , "user_roll" , "profile_image"]}),
         ("Permissions", {"fields": ["is_admin","is_active"]}),
     ]
+    # fieldsets = [
+    #     ('User Credentials', {"fields": ["email", "password"]}),
+    #     ("Personal info", {"fields": ["name" , "designation"]}),
+    #     ("Permissions", {"fields": ["is_admin" , "is_active" ]}),
+    # ]
     # add_fieldsets is not a standard ModelAdmin attribute. UserAdmin
     # overrides get_fieldsets to use this attribute when creating a user.
-    add_fieldsets = [
-        (
-            None,
-            {
-                "classes": ["wide"],
-                "fields": ["email", "name", "password1", "password2"],
-            },
-        ),
-    ]
+    # add_fieldsets = [
+    #     (
+    #         None,
+    #         {
+    #             "classes": ["wide"],
+    #             "fields": ["email", "name", "password1", "password2"],
+    #         },
+    #     ),
+    # ]
     search_fields = ["email"]
     ordering = ["email"]
     filter_horizontal = []

@@ -1,0 +1,251 @@
+To implement Simple Jwt 
+
+reference Link 
+
+https://django-rest-framework-simplejwt.readthedocs.io/en/latest/getting_started.html
+
+corsheader
+https://pypi.org/project/django-cors-headers/
+
+Follow these Steps 
+
+---------------------------------------------------------------------------------------
+Step 1
+
+install Library 
+
+>>> pip install djangorestframework-simplejwt
+>>> pip install django-cors-headers
+
+
+---------------------------------------------------------------------------------------
+
+Step 2 
+
+Configure simple_jwt in settings.py
+add the code in settings.py 
+
+open 
+
+settings.py 
+
+from datetime import timedelta
+
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
+}
+
+
+
+
+# JWT settings
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=20),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "AUTH_HEADER_NAME": "HTTP_AUTHORIZATION",
+    "USER_ID_FIELD": "id",
+    "USER_ID_CLAIM": "user_id",
+    "USER_AUTHENTICATION_RULE": "rest_framework_simplejwt.authentication.default_user_authentication_rule",
+
+    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
+    "TOKEN_TYPE_CLAIM": "token_type",
+    "TOKEN_USER_CLASS": "rest_framework_simplejwt.models.TokenUser",
+
+    "JTI_CLAIM": "jti",
+
+    "TOKEN_OBTAIN_SERIALIZER": "rest_framework_simplejwt.serializers.TokenObtainPairSerializer",
+    "TOKEN_REFRESH_SERIALIZER": "rest_framework_simplejwt.serializers.TokenRefreshSerializer",
+    "TOKEN_VERIFY_SERIALIZER": "rest_framework_simplejwt.serializers.TokenVerifySerializer",
+    "TOKEN_BLACKLIST_SERIALIZER": "rest_framework_simplejwt.serializers.TokenBlacklistSerializer",
+    "SLIDING_TOKEN_OBTAIN_SERIALIZER": "rest_framework_simplejwt.serializers.TokenObtainSlidingSerializer",
+    "SLIDING_TOKEN_REFRESH_SERIALIZER": "rest_framework_simplejwt.serializers.TokenRefreshSlidingSerializer",
+}
+
+
+
+
+---------------------------------------------------------------------------------------
+
+Step 3
+
+configure cores headers 
+
+open settings.py 
+
+
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    "corsheaders",
+    'rest_framework',
+    'rest_framework_simplejwt',
+    'Accounts',
+]
+
+
+
+# add middleware 
+MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    "corsheaders.middleware.CorsMiddleware",           # add this for cors header
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+]
+
+
+
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+
+
+
+---------------------------------------------------------------------------------------
+
+Step 4
+
+Create serializers.py
+
+serializers.py
+
+from rest_framework import serializers
+# from .models import MyUser
+from django.contrib.auth import get_user_model
+
+class MyUserSerializers(serializers.ModelSerializer):
+
+    class Meta:
+        # model = MyUser
+        model = get_user_model()
+        fields = "__all__"
+
+
+
+
+
+
+
+---------------------------------------------------------------------------------------
+
+Step 5
+
+urls.py ( Accounts App )
+
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('user-login/' , views.UserLoginView.as_view()),
+    path('register-user/' , views.RegisterUserView.as_view())
+]
+
+
+
+
+---------------------------------------------------------------------------------------
+Step 6
+
+create views.py 
+
+views.py ( Accounts App )
+
+
+from django.shortcuts import render
+from django.contrib.auth import authenticate  #for user authentication 
+
+from .models import MyUser
+from .serializers import MyUserSerializers
+
+from rest_framework.decorators import APIView
+from rest_framework import status
+from rest_framework.response import Response
+
+from rest_framework_simplejwt.tokens import RefreshToken
+
+# Create your views here.
+
+
+
+# generate Tokens manually 
+def get_tokens_for_user(user):
+    refresh = RefreshToken.for_user(user)
+    
+    return {
+        'refresh': str(refresh),
+        'access': str(refresh.access_token),
+    }
+
+
+
+class UserLoginView(APIView):
+    
+    def post(self, request, format=None):
+        email = request.data.get('email')
+        password = request.data.get('password')
+        
+        user = authenticate(request, email=email, password=password)
+        
+        if user is not None:
+            
+            token = get_tokens_for_user(user)
+
+            return Response({'msg': 'Login Successful', 'token': token}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'Email or password Not Valid'}, status=status.HTTP_404_NOT_FOUND)
+
+class RegisterUserView(APIView):
+    def post(self, request, format=None):
+        serializer = MyUserSerializers(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'msg':'Registered successfully.'}, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
+
+
+
+---------------------------------------------------------------------------------------
+
+steps 7
+
+include App urls.py in a Project urls.py
+
+urls.py ( Project )
+
+from django.contrib import admin
+from django.urls import path , include
+from django.conf import settings
+from django.conf.urls.static import static
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('api/auth/' , include('Accounts.urls'))
+    
+]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL , document_root = settings.STATIC_ROOT)
+    urlpatterns += static(settings.MEDIA_URL , document_root = settings.MEDIA_ROOT)
+
+
+
+
+
+---------------------------------------------------------------------------------------
