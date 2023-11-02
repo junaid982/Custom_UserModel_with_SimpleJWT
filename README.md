@@ -1,3 +1,5 @@
+(switch git into code mode mode )
+
 These are the steps to create Custom user model in Djnago
 
 reference custom user model
