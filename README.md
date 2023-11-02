@@ -11,14 +11,14 @@ required Libraries in global enviroment
 
 
 Windows 
->>> pip install django 
->>> pip install virtualenv 
+pip install django 
+pip install virtualenv 
 
 
 Linux 
->>> sudo apt install python3-pip 
->>> pip install django
->>> sudo pip install virtualenv
+sudo apt install python3-pip 
+pip install django
+sudo pip install virtualenv
 
 
 ---------------------------------------------------------------------------------------
