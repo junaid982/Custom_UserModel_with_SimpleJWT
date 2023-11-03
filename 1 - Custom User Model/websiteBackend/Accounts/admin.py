@@ -16,21 +16,11 @@ class UserAdmin(BaseUserAdmin):
     list_display = ["email", "name","designation","user_roll","profile_image" ,"is_admin"]
     list_filter = ["is_admin"]
     fieldsets = [
-        (None, {"fields": ["email", "password"]}),
+        ('User Credentials', {"fields": ["email", "password"]}),
         ("Personal info", {"fields": ["name","designation" , "user_roll" , "profile_image"]}),
         ("Permissions", {"fields": ["is_admin","is_active"]}),
     ]
-    # add_fieldsets is not a standard ModelAdmin attribute. UserAdmin
-    # overrides get_fieldsets to use this attribute when creating a user.
-    add_fieldsets = [
-        (
-            None,
-            {
-                "classes": ["wide"],
-                "fields": ["email", "name", "password1", "password2"],
-            },
-        ),
-    ]
+    
     search_fields = ["email"]
     ordering = ["email"]
     filter_horizontal = []

@@ -41,6 +41,7 @@ REST_FRAMEWORK = {
 
 
 
+
 # JWT settings
 
 SIMPLE_JWT = {
@@ -95,6 +96,7 @@ INSTALLED_APPS = [
 
 
 # add middleware 
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -107,14 +109,10 @@ MIDDLEWARE = [
 ]
 
 
-
-
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]
-
-
 
 
 ---------------------------------------------------------------------------------------
@@ -158,14 +156,12 @@ urlpatterns = [
 
 
 
-
 ---------------------------------------------------------------------------------------
 Step 6
 
 create views.py 
 
 views.py ( Accounts App )
-
 
 from django.shortcuts import render
 from django.contrib.auth import authenticate  #for user authentication 
@@ -219,8 +215,6 @@ class RegisterUserView(APIView):
         
         return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
 
-
-
 ---------------------------------------------------------------------------------------
 
 steps 7
@@ -230,14 +224,13 @@ include App urls.py in a Project urls.py
 urls.py ( Project )
 
 from django.contrib import admin
-from django.urls import path , include
-from django.conf import settings
-from django.conf.urls.static import static
+from django.urls import path ,include
+from django.conf import settings                # import for setup media and static
+from django.conf.urls.static import static      # import for setup media and static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/auth/' , include('Accounts.urls'))
-    
+    path('api/auth/' , include('Accounts.urls')),
 ]
 
 if settings.DEBUG:
@@ -249,3 +242,68 @@ if settings.DEBUG:
 
 
 ---------------------------------------------------------------------------------------
+
+
+Step 8
+
+Run server 
+
+>>> python manage.py runserver 
+
+
+
+---------------------------------------------------------------------------------------
+
+
+Step 9 
+
+Open Postman or ThunderClient for Api call 
+
+
+Regiester User 
+POST Request 
+
+url : http://127.0.0.1:8000/api/auth/register-user/
+
+Json body 
+
+{
+    "email" : "test@gmail.com",
+    "name" : "User Name",
+    "designation" : "Developer" ,
+    "user_roll" :"Admin",
+    "password":"123456"
+}
+
+
+
+
+
+Login User 
+
+POST Request 
+
+url : http://127.0.0.1:8000/api/auth/user-login/
+
+Json body 
+
+{
+    "email":"test@gmail.com",
+    "password" : "123456"
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

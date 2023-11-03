@@ -35,7 +35,6 @@ class MyUserManager(BaseUserManager):
             designation = designation,
             user_roll = user_roll,
         )
-        
         user.is_admin = True
         user.save(using=self._db)
         return user
@@ -59,7 +58,7 @@ class MyUser(AbstractBaseUser):
     objects = MyUserManager()
 
     USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = ["name" , "designation" ]
+    REQUIRED_FIELDS = ["name" , "designation" ,"user_roll"]
 
     def __str__(self):
         return self.email
