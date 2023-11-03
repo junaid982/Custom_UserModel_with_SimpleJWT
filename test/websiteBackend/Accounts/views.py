@@ -47,19 +47,33 @@ class UserLoginView(APIView):
     
     
     def post(self , request , format=None):
+
+        serializer = UserLoginSerializer(data = request.data)
+        if serializer.is_valid():
+            email = serializer.validated_data['email']
+            password = serializer.validated_data['password']
+            
+            user = authenticate(email = email , password = password)
+
+            if user is not None :
+                token = get_tokens_for_user(user) 
+                return Response({"message":"Login Successfull" , 'token': token} , status=status.HTTP_200_OK)
+            
+
+
     
-        email = request.data.get('email')
-        password = request.data.get('password')
+        # email = request.data.get('email')
+        # password = request.data.get('password')
         
-        user = authenticate(email = email , password = password)
-        if user is not None: 
+        # user = authenticate(email = email , password = password)
+        # if user is not None: 
 
-            # generating tokens for login user
-            token = get_tokens_for_user(user)    
-            # print('request.user.is_admin :',serializer.data.get('is_admin'))
+        #     # generating tokens for login user
+        #     token = get_tokens_for_user(user)    
+        #     # print('request.user.is_admin :',serializer.data.get('is_admin'))
 
-            # print('serializer.data :',serializer.data)
+        #     # print('serializer.data :',serializer.data)
 
-            return Response({'token':token ,'msg':'Login Successful' } , status=status.HTTP_200_OK)
-        else:
-            return Response( {'errors':{'non_field_errors':['Email or password Not Valid']} },status=status.HTTP_404_NOT_FOUND)
+        #     return Response({'token':token ,'msg':'Login Successful' } , status=status.HTTP_200_OK)
+        # else:
+        #     return Response( {'errors':{'non_field_errors':['Email or password Not Valid']} },status=status.HTTP_404_NOT_FOUND)
