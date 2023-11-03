@@ -2,79 +2,75 @@ from django.db import models
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
 
 
-class MyUserManager(BaseUserManager):
-    def create_user(self, email,name , designation,user_roll, password=None):
-        """
-        Creates and saves a User with the given email, date of
-        birth and password.
-        """
+class UserManager(BaseUserManager):
+    def create_user(self, email, name, designation, user_roll, user_profile=None, password=None):
         if not email:
             raise ValueError("Users must have an email address")
 
         user = self.model(
             email=self.normalize_email(email),
-            name = name,
-            designation = designation,
-            user_roll = user_roll,
-
+            name=name,
+            designation=designation,
+            user_roll=user_roll,
+            user_profile=user_profile
         )
 
         user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email, name, designation , user_roll , password=None):
-        """
-        Creates and saves a superuser with the given email, date of
-        birth and password.
-        """
+    def create_superuser(self, email, name, designation, user_roll, password=None):
         user = self.create_user(
             email,
             password=password,
             name=name,
-            designation = designation,
-            user_roll = user_roll,
+            designation=designation,
+            user_roll=user_roll,
         )
         user.is_admin = True
         user.save(using=self._db)
         return user
+   
+
+    
 
 
-class MyUser(AbstractBaseUser):
+# First create Our custom user model .
+class User(AbstractBaseUser):
     email = models.EmailField(
-        verbose_name="email address",
+        verbose_name="Email Address",
         max_length=255,
         unique=True,
     )
+    
     name = models.CharField(max_length=255)
     designation = models.CharField(max_length=255)
     user_roll = models.CharField(max_length=255)
-
-    profile_image = models.ImageField(upload_to='Profile_image/' , null=True , blank=True)
+    user_profile = models.ImageField(upload_to='user_profile/', null=True, blank=True)
+    # Add or modify fields as per your requirements
 
     is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
-    objects = MyUserManager()
-
+    # Your UserManager definition
+    objects = UserManager()
+    
     USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = ["name" , "designation" ,"user_roll"]
+    REQUIRED_FIELDS = ["name", "designation", "user_roll"]
 
     def __str__(self):
         return self.email
 
     def has_perm(self, perm, obj=None):
-        "Does the user have a specific permission?"
-        # Simplest possible answer: Yes, always
-        return True
+        return self.is_admin
 
     def has_module_perms(self, app_label):
-        "Does the user have permissions to view the app `app_label`?"
-        # Simplest possible answer: Yes, always
         return True
 
     @property
     def is_staff(self):
-        "Is the user a member of staff?"
-        # Simplest possible answer: All admins are staff
         return self.is_admin
+

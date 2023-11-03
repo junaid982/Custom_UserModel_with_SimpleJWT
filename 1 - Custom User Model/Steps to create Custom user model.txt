@@ -141,82 +141,81 @@ from django.db import models
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
 
 
-class MyUserManager(BaseUserManager):
-    def create_user(self, email,name , designation,user_roll, password=None):
-        """
-        Creates and saves a User with the given email, date of
-        birth and password.
-        """
+class UserManager(BaseUserManager):
+    def create_user(self, email, name, designation, user_roll, user_profile=None, password=None):
         if not email:
             raise ValueError("Users must have an email address")
 
         user = self.model(
             email=self.normalize_email(email),
-            name = name,
-            designation = designation,
-            user_roll = user_roll,
-
+            name=name,
+            designation=designation,
+            user_roll=user_roll,
+            user_profile=user_profile
         )
 
         user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email, name, designation , user_roll , password=None):
-        """
-        Creates and saves a superuser with the given email, date of
-        birth and password.
-        """
+    def create_superuser(self, email, name, designation, user_roll, password=None):
         user = self.create_user(
             email,
             password=password,
             name=name,
-            designation = designation,
-            user_roll = user_roll,
+            designation=designation,
+            user_roll=user_roll,
         )
         user.is_admin = True
         user.save(using=self._db)
         return user
+   
+
+    
 
 
-class MyUser(AbstractBaseUser):
+# First create Our custom user model .
+class User(AbstractBaseUser):
     email = models.EmailField(
-        verbose_name="email address",
+        verbose_name="Email Address",
         max_length=255,
         unique=True,
     )
+    
     name = models.CharField(max_length=255)
     designation = models.CharField(max_length=255)
     user_roll = models.CharField(max_length=255)
-
-    profile_image = models.ImageField(upload_to='Profile_image/' , null=True , blank=True)
+    user_profile = models.ImageField(upload_to='user_profile/', null=True, blank=True)
+    # Add or modify fields as per your requirements
 
     is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
-    objects = MyUserManager()
-
+    # Your UserManager definition
+    objects = UserManager()
+    
     USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = ["name" , "designation" ,"user_roll"]
+    REQUIRED_FIELDS = ["name", "designation", "user_roll"]
 
     def __str__(self):
         return self.email
 
     def has_perm(self, perm, obj=None):
-        "Does the user have a specific permission?"
-        # Simplest possible answer: Yes, always
-        return True
+        return self.is_admin
 
     def has_module_perms(self, app_label):
-        "Does the user have permissions to view the app `app_label`?"
-        # Simplest possible answer: Yes, always
         return True
 
     @property
     def is_staff(self):
-        "Is the user a member of staff?"
-        # Simplest possible answer: All admins are staff
         return self.is_admin
+
+
+
+
 
 ---------------------------------------------------------------------------------------
 
@@ -225,39 +224,43 @@ Step 8
 Setup 
 admin.py ( Accounts App )
 
-from django import forms
 from django.contrib import admin
-from django.contrib.auth.models import Group
+from . models import User
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
+# Register your models here.
+class UserModelAdmin(BaseUserAdmin):
 
-from Accounts.models import MyUser
-
-
-class UserAdmin(BaseUserAdmin):
-    # The forms to add and change user instances
-    
     # The fields to be used in displaying the User model.
-    # These override the definitions on the base UserAdmin
+    # These override the definitions on the base UserModelAdmin
     # that reference specific fields on auth.User.
-    list_display = ["email", "name","designation","user_roll","profile_image" ,"is_admin"]
+
+    list_display = ["id" , "email", "name", "is_admin" ,"user_profile" , "created_at" , "updated_at"]
     list_filter = ["is_admin"]
     fieldsets = [
         ('User Credentials', {"fields": ["email", "password"]}),
-        ("Personal info", {"fields": ["name","designation" , "user_roll" , "profile_image"]}),
-        ("Permissions", {"fields": ["is_admin","is_active"]}),
+        ("Personal info", {"fields": ["name" , "designation" ,"user_profile"]}),
+        ("Permissions", {"fields": ["is_admin"]}),
     ]
-    
-    search_fields = ["email"]
-    ordering = ["email"]
+    # add_fieldsets is not a standard ModelAdmin attribute. UserModelAdmin
+    # overrides get_fieldsets to use this attribute when creating a user.
+    add_fieldsets = [
+        (
+            None,
+            {
+                "classes": ["wide"],
+                "fields": ["email", "name" , "designation", "password"],
+            },
+        ),
+    ]
+    search_fields = ["email" , "name"]
+    ordering = ["email" , "id"]
     filter_horizontal = []
 
-
 # Now register the new UserAdmin...
-admin.site.register(MyUser, UserAdmin)
-# ... and, since we're not using Django's built-in permissions,
-# unregister the Group model from admin.
-admin.site.unregister(Group)
+admin.site.register(User, UserModelAdmin)
+
+
 
 ---------------------------------------------------------------------------------------
 
@@ -268,7 +271,7 @@ and add this line below databse settings
 
 open settings.py 
 
-AUTH_USER_MODEL = "Accounts.MyUser"
+AUTH_USER_MODEL = "Accounts.User"
 
 
 
