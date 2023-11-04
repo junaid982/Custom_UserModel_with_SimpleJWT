@@ -1,0 +1,345 @@
+To implement Simple Jwt 
+
+reference Link 
+
+https://django-rest-framework-simplejwt.readthedocs.io/en/latest/getting_started.html
+
+corsheader
+https://pypi.org/project/django-cors-headers/
+
+Follow these Steps 
+
+---------------------------------------------------------------------------------------
+Step 1
+
+install Library 
+
+>>> pip install djangorestframework-simplejwt
+>>> pip install django-cors-headers
+
+
+---------------------------------------------------------------------------------------
+
+Step 2 
+
+Configure simple_jwt in settings.py
+add the code in settings.py 
+
+open 
+
+settings.py 
+
+from datetime import timedelta
+
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    # 'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
+    'DEFAULT_RENDERER_CLASSES':('rest_framework.renderers.JSONRenderer',)   # this line convert API view to default json view 
+}
+
+
+
+
+
+# JWT settings
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=720),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "AUTH_HEADER_NAME": "HTTP_AUTHORIZATION",
+    "USER_ID_FIELD": "id",
+    "USER_ID_CLAIM": "user_id",
+    "USER_AUTHENTICATION_RULE": "rest_framework_simplejwt.authentication.default_user_authentication_rule",
+
+    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
+    "TOKEN_TYPE_CLAIM": "token_type",
+    "TOKEN_USER_CLASS": "rest_framework_simplejwt.models.TokenUser",
+
+    "JTI_CLAIM": "jti",
+
+    "TOKEN_OBTAIN_SERIALIZER": "rest_framework_simplejwt.serializers.TokenObtainPairSerializer",
+    "TOKEN_REFRESH_SERIALIZER": "rest_framework_simplejwt.serializers.TokenRefreshSerializer",
+    "TOKEN_VERIFY_SERIALIZER": "rest_framework_simplejwt.serializers.TokenVerifySerializer",
+    "TOKEN_BLACKLIST_SERIALIZER": "rest_framework_simplejwt.serializers.TokenBlacklistSerializer",
+    "SLIDING_TOKEN_OBTAIN_SERIALIZER": "rest_framework_simplejwt.serializers.TokenObtainSlidingSerializer",
+    "SLIDING_TOKEN_REFRESH_SERIALIZER": "rest_framework_simplejwt.serializers.TokenRefreshSlidingSerializer",
+}
+
+
+
+---------------------------------------------------------------------------------------
+
+Step 3
+
+configure cores headers 
+
+open settings.py 
+
+
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    "corsheaders",
+    'rest_framework',
+    'rest_framework_simplejwt',
+    'Accounts',
+]
+
+
+
+# add middleware 
+
+MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    "corsheaders.middleware.CorsMiddleware",           # add this for cors header
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+]
+
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+
+---------------------------------------------------------------------------------------
+
+Step 4
+
+Create serializers.py
+
+serializers.py
+
+from rest_framework import serializers
+from .models import User
+
+
+class UserRegistrationSerializer(serializers.ModelSerializer):
+    # password = serializers.CharField(write_only=True, style={'input_type': 'password'})
+
+    class Meta:
+        model = User
+        fields = ['email', 'name', 'designation', 'user_roll', 'password', 'user_profile']
+
+    def create(self, validated_data):
+        password = validated_data.pop('password', None)
+        user = User.objects.create_user(**validated_data, password=password)
+        return user
+    
+
+class UserLoginSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(style={'input_type': 'password'})
+
+    def validate(self, data):
+        email = data.get('email')
+        password = data.get('password')
+
+        if email and password:
+            if User.objects.filter(email=email).exists():
+                user = User.objects.get(email=email)
+                if user.check_password(password):
+                    return data
+            raise serializers.ValidationError("Invalid email or password")
+        raise serializers.ValidationError("Both email and password are required")
+
+
+
+
+
+
+---------------------------------------------------------------------------------------
+
+Step 5
+
+urls.py ( Accounts App )
+
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('user-login/' , views.UserLoginView.as_view()),
+    path('register-user/' , views.RegisterUserView.as_view())
+]
+
+
+---------------------------------------------------------------------------------------
+Step 6
+
+create views.py 
+
+views.py ( Accounts App )
+
+from rest_framework.response import Response
+from rest_framework import status,generics
+from rest_framework.views import APIView
+from .serializers import UserRegistrationSerializer , UserLoginSerializer 
+from django.contrib.auth import authenticate  #for user authentication 
+# from accounts.renderers import UserRenderer
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.permissions import IsAuthenticated
+from .models import User
+
+
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+
+from django.contrib.auth.models import User as UserPass
+
+# generate Tokens manually 
+def get_tokens_for_user(user):
+    refresh = RefreshToken.for_user(user)
+    
+    return {
+        'refresh': str(refresh),
+        'access': str(refresh.access_token),
+    }
+
+
+
+# User Registration view  
+class UserRegistrationView(APIView):
+    # permission_classes = [IsAuthenticated]
+  
+    
+    def post(self , request , format=None):
+        #print("Data :",request.data)
+        serializer = UserRegistrationSerializer(data = request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+
+            # generating tokens for new registered user
+        # token = get_tokens_for_user(user) 
+
+        return Response({"msg":"Registration Successful"} , status=status.HTTP_201_CREATED)
+        
+
+# User Login View 
+class UserLoginView(APIView):
+    
+    
+    def post(self , request , format=None):
+    
+        email = request.data.get('email')
+        password = request.data.get('password')
+        
+        user = authenticate(email = email , password = password)
+        if user is not None: 
+
+            # generating tokens for login user
+            token = get_tokens_for_user(user)    
+            # print('request.user.is_admin :',serializer.data.get('is_admin'))
+
+            # print('serializer.data :',serializer.data)
+
+            return Response({'token':token ,'msg':'Login Successful' } , status=status.HTTP_200_OK)
+        else:
+            return Response( {'errors':{'non_field_errors':['Email or password Not Valid']} },status=status.HTTP_404_NOT_FOUND)
+            
+    
+---------------------------------------------------------------------------------------
+
+steps 7
+
+include App urls.py in a Project urls.py
+
+urls.py ( Project )
+
+from django.contrib import admin
+from django.urls import path ,include
+from django.conf import settings                # import for setup media and static
+from django.conf.urls.static import static      # import for setup media and static
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('api/auth/' , include('Accounts.urls')),
+]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL , document_root = settings.STATIC_ROOT)
+    urlpatterns += static(settings.MEDIA_URL , document_root = settings.MEDIA_ROOT)
+
+
+
+
+
+---------------------------------------------------------------------------------------
+
+
+Step 8
+
+Run server 
+
+>>> python manage.py runserver 
+
+
+
+---------------------------------------------------------------------------------------
+
+
+Step 9 
+
+Open Postman or ThunderClient for Api call 
+
+
+Regiester User 
+POST Request 
+
+url : http://127.0.0.1:8000/api/auth/register-user/
+
+Json body 
+
+{
+    "email" : "test@gmail.com",
+    "name" : "User Name",
+    "designation" : "Developer" ,
+    "user_roll" :"Admin",
+    "password":"123456"
+}
+
+
+
+
+
+Login User 
+
+POST Request 
+
+url : http://127.0.0.1:8000/api/auth/user-login/
+
+Json body 
+
+{
+    "email":"test@gmail.com",
+    "password" : "123456"
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

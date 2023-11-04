@@ -1,8 +1,8 @@
 from rest_framework.response import Response
 from rest_framework import status,generics
 from rest_framework.views import APIView
-from .serializers import UserRegistrationSerializer , UserLoginSerializer 
-from django.contrib.auth import authenticate  #for user authentication 
+from .serializers import UserRegistrationSerializer , UserLoginSerializer ,UserSerializer
+from django.contrib.auth import authenticate , login #for user authentication 
 # from accounts.renderers import UserRenderer
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated
@@ -45,35 +45,34 @@ class RegisterUserView(APIView):
 # User Login View 
 class UserLoginView(APIView):
     
-    
     def post(self , request , format=None):
 
         serializer = UserLoginSerializer(data = request.data)
         if serializer.is_valid():
-            email = serializer.validated_data['email']
-            password = serializer.validated_data['password']
+            email = serializer.data.get('email' , None)
+            password = serializer.data.get('password' , None)
             
             user = authenticate(email = email , password = password)
+            if user is not None: 
+                login(request, user) # update last login details
+                token = get_tokens_for_user(user)
+                data = User.objects.get(email = email)
+                userDetails = UserSerializer(data , context = {'request' : request})
+                userDetails.data.pop('password', None)
+                
+                return Response({'msg':'Login Successful' ,'token':token , "userDetails" : userDetails.data} , status=status.HTTP_200_OK)
 
-            if user is not None :
-                token = get_tokens_for_user(user) 
-                return Response({"message":"Login Successfull" , 'token': token} , status=status.HTTP_200_OK)
+            else:
+                return Response( {'error':'Email or password Not Valid' },status=status.HTTP_404_NOT_FOUND)
             
-
-
+        return Response( {'errors': serializer.errors },status=status.HTTP_404_NOT_FOUND)
     
-        # email = request.data.get('email')
-        # password = request.data.get('password')
-        
-        # user = authenticate(email = email , password = password)
-        # if user is not None: 
 
-        #     # generating tokens for login user
-        #     token = get_tokens_for_user(user)    
-        #     # print('request.user.is_admin :',serializer.data.get('is_admin'))
+class GetAllUsers(APIView):
+    # permission_classes = [IsAuthenticated]
 
-        #     # print('serializer.data :',serializer.data)
+    def get(self , request , format=None):
+        all_users = User.objects.all()
+        serializer =  UserSerializer(all_users , many = True , context = {'request':request})
 
-        #     return Response({'token':token ,'msg':'Login Successful' } , status=status.HTTP_200_OK)
-        # else:
-        #     return Response( {'errors':{'non_field_errors':['Email or password Not Valid']} },status=status.HTTP_404_NOT_FOUND)
+        return Response({"all_users" : serializer.data })

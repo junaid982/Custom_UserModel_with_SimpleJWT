@@ -31,3 +31,9 @@ class UserLoginSerializer(serializers.Serializer):
             raise serializers.ValidationError("Invalid email or password")
         raise serializers.ValidationError("Both email and password are required")
 
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = "__all__"
+
