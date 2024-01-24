@@ -1,0 +1,137 @@
+* 1 -  Created using Python 3.11 
+
+* 2 - Create & Install Virtual Enviroment 
+
+>>> pip install virtualenv
+
+-> Windows
+	>>> virtualenv env
+	
+	* activate enviroment 	
+	>>> env\Scripts\activate
+
+-> Linux 
+	>>> virtualenv env
+	
+	* activate enviroment 
+	>>> source env/bin/activate
+
+
+* 3 - Install required Libraries
+
+>>> pip install -r requirements.txt
+		or 
+install libararies manually all libraries included inside Libraries.txt
+
+
+* 4 - Run these commands 
+
+>>> python manage.py makemigrations
+>>> python manage.py migrate
+>>> python manage.py runserver 
+
+
+* 5 - Use Postman or ThunderClient to perform API Calls
+
+all are the curls below 
+--------------------------------------------------------------------------------
+1 - Create New User 
+
+curl --location 'http://127.0.0.1:8000/api/auth/register-user/' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "email" : "ansarijunaid957@gmail.com",
+    "name" : "Junaid Ansari",
+    "designation" : "Sr. FullStack Developer" ,
+    "user_roll" :"Admin",
+    "password":"123456"
+}'
+
+--------------------------------------------------------------------------------
+
+2 - Login User
+
+
+curl --location 'http://127.0.0.1:8000/api/auth/user-login/' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "email":"ansarijunaid957@gmail.com",
+    "password" : "123456"
+}'
+
+
+--------------------------------------------------------------------------------
+
+3 - Get All User Details
+
+
+curl --location 'http://127.0.0.1:8000/api/auth/get/all-user/details/'
+
+
+--------------------------------------------------------------------------------
+
+4 - Get User Details By id 
+
+
+curl --location --request POST 'http://127.0.0.1:8000/api/auth/get/user/details/by/2/' \
+--data ''
+
+--------------------------------------------------------------------------------
+
+5 - Update User Data 
+
+curl --location --request PATCH 'http://127.0.0.1:8000/api/auth/edit/user/details/by/admin/1/' \
+--form 'name="Ansari Junaid"' \
+--form 'designation="Developer"' \
+--form 'user_roll="developer"' \
+--form 'user_profile=@"/C:/Users/ansar/Downloads/boy.jpg"' \
+--form 'is_active="true"' \
+--form 'is_admin="true"' \
+--form 'dashboard_perms="true"' \
+--form 'sheets_perms="true"' \
+--form 'uploads_perms="true"' \
+--form 'users_perms="true"' \
+--form 'activity_perms="true"' \
+--form 'other_perms="{}"' \
+--form 'password="python"'
+
+
+--------------------------------------------------------------------------------
+
+6 - Change user Password
+
+
+curl --location --request PATCH 'http://127.0.0.1:8000/api/auth/change/user/password/by/admin/1/' \
+--header 'Content-Type: application/json' \
+--data '{
+    "password":"python"
+}'
+
+--------------------------------------------------------------------------------
+
+7 - Delete User 
+
+curl --location --request DELETE 'http://127.0.0.1:8000/api/auth/remove/user/by/admin/1/'
+
+
+--------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
